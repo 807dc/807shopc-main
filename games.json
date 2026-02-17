@@ -144,5 +144,11 @@
         "image": "https:\\/\\/shared.fastly.steamstatic.com\\/store_item_assets\\/steam\\/apps\\/387990\\/capsule_616x353.jpg",
         "link": "https://www.clictune.com/mnje",
         "mode": "multiplayer"
+    },
+    {
+        "title": "Tropico 5",
+        "image": "https:\\/\\/shared.fastly.steamstatic.com\\/store_item_assets\\/steam\\/apps\\/245620\\/capsule_616x353.jpg",
+        "link": "https://www.clictune.com/mnjf",
+        "mode": "solo"
     }
 ]
