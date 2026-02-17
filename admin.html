@@ -305,6 +305,14 @@
     <script>
         const LOGIN_KEY = 'adminLoggedIn';
         const PASSWORD_KEY = 'adminPass';
+        const GAMES_CHANNEL = 'novaplay-games';
+
+        // Notifie la page principale (index.html) de rafraîchir les jeux en temps réel
+        function broadcastGamesUpdated() {
+            if (typeof BroadcastChannel !== 'undefined') {
+                try { new BroadcastChannel(GAMES_CHANNEL).postMessage('updated'); } catch (e) {}
+            }
+        }
 
         function showScreen(id) {
             document.querySelectorAll('.admin-screen').forEach(el => el.classList.remove('active'));
@@ -436,6 +444,7 @@
                 if (res.ok) {
                     closeEditModal();
                     loadGames();
+                    broadcastGamesUpdated();
                 } else {
                     alert(data.error || 'Erreur ' + res.status);
                 }
@@ -455,7 +464,7 @@
                     body: JSON.stringify({ adminPassword, index })
                 });
                 const data = await res.json().catch(() => ({}));
-                if (res.ok) loadGames();
+                if (res.ok) { loadGames(); broadcastGamesUpdated(); }
                 else alert(data.error || 'Erreur ' + res.status);
             } catch (err) {
                 alert('Erreur réseau: ' + err.message);
@@ -541,7 +550,7 @@
                 msg.className = 'admin-msg ' + (res.ok ? 'success' : 'error');
                 msg.textContent = data.error || data.message || (res.ok ? 'Jeu ajouté.' : 'Erreur ' + res.status);
                 msg.style.display = 'block';
-                if (res.ok) { form.reset(); loadGames(); }
+                if (res.ok) { form.reset(); loadGames(); broadcastGamesUpdated(); }
             } catch (err) {
                 msg.className = 'admin-msg error';
                 msg.textContent = 'Erreur réseau: ' + err.message;
