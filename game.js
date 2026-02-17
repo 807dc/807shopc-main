@@ -93,6 +93,11 @@ function generateGameElements(games) {
     });
 }
 
+// Supprime les modales dynamiques (avant rafraîchissement)
+function removeGameModals() {
+    document.querySelectorAll('[data-game-modal="true"]').forEach(el => el.remove());
+}
+
 // Fonction pour générer les modales
 function generateModals(games) {
     const container = document.body;
@@ -105,6 +110,7 @@ function generateModals(games) {
         const modalBg = document.createElement('div');
         modalBg.id = game.modalId + '-modal-bg';
         modalBg.className = 'modal-bg';
+        modalBg.setAttribute('data-game-modal', 'true');
         modalBg.style.display = 'none';
 
         const modal = document.createElement('div');
@@ -166,15 +172,20 @@ function applyFilters() {
     });
 }
 
-async function initGamePage() {
+const GAMES_CHANNEL = 'novaplay-games';
+
+// Rafraîchit les jeux (fetch + re-render) — appelé au chargement, au retour sur l'onglet ou via BroadcastChannel
+async function refreshGames(showLoading = true) {
     const gamesGrid = document.getElementById('gamesGrid');
     if (!gamesGrid) return;
 
-    gamesGrid.innerHTML = '<p class="games-loading">Chargement des jeux...</p>';
+    if (showLoading) {
+        gamesGrid.innerHTML = '<p class="games-loading">Chargement des jeux...</p>';
+    }
     let games = [];
 
     try {
-        const res = await fetch('/api/games', { cache: 'no-store' });
+        const res = await fetch('/api/games?t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
             const data = await res.json();
             games = Array.isArray(data) ? data : (data.games || data.items || []);
@@ -185,9 +196,17 @@ async function initGamePage() {
 
     if (!games.length) games = GAMES_FALLBACK;
 
+    removeGameModals();
     gamesGrid.innerHTML = '';
     generateGameElements(games);
     generateModals(games);
+}
+
+function initGamePage() {
+    const gamesGrid = document.getElementById('gamesGrid');
+    if (!gamesGrid) return;
+
+    refreshGames(true);
 
     const gameSearch = document.getElementById('gameSearch');
     if (gameSearch) {
@@ -203,6 +222,19 @@ async function initGamePage() {
             applyFilters();
         });
     });
+
+    // Rafraîchir quand on revient sur l'onglet
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            refreshGames(false);
+        }
+    });
+
+    // Rafraîchir quand l'admin ajoute/modifie/supprime un jeu (même onglet ou autre onglet)
+    if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel(GAMES_CHANNEL);
+        bc.onmessage = () => refreshGames(false);
+    }
 }
 
 // Initialisation de la page jeux
