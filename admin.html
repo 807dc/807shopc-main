@@ -99,6 +99,44 @@
             transition: color 0.2s, border-color 0.2s;
         }
         .admin-logout:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+        /* Liste des jeux */
+        .admin-wrap { max-width: 640px; }
+        .admin-games-section { margin-bottom: 2rem; }
+        .admin-games-section h2 { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text-secondary); }
+        .admin-games-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .admin-game-row {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem;
+            background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-sm);
+        }
+        .admin-game-row img { width: 80px; height: 46px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+        .admin-game-row .title { flex: 1; font-weight: 600; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .admin-game-row .mode { font-size: 0.8rem; color: var(--text-muted); text-transform: capitalize; }
+        .admin-game-row .actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+        .admin-game-row .btn-edit, .admin-game-row .btn-delete {
+            padding: 0.4rem 0.65rem; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; border: none; font-weight: 500;
+        }
+        .admin-game-row .btn-edit { background: rgba(124, 58, 237, 0.3); color: var(--accent-light); }
+        .admin-game-row .btn-edit:hover { background: rgba(124, 58, 237, 0.5); color: #fff; }
+        .admin-game-row .btn-delete { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .admin-game-row .btn-delete:hover { background: rgba(239, 68, 68, 0.4); color: #fff; }
+        .admin-games-loading { color: var(--text-muted); padding: 1rem; }
+        .admin-games-empty { color: var(--text-muted); padding: 1rem; font-size: 0.9rem; }
+
+        /* Modal édition */
+        .admin-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+        .admin-modal-bg.active { display: flex; }
+        .admin-modal {
+            background: linear-gradient(145deg, rgba(30, 25, 50, 0.98), rgba(15, 12, 25, 0.98)); border-radius: var(--radius-lg);
+            border: 1px solid var(--border-accent); max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;
+            padding: 1.5rem; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+        }
+        .admin-modal h3 { font-family: 'Orbitron', sans-serif; margin-bottom: 1rem; font-size: 1.15rem; }
+        .admin-modal .admin-form { margin: 0; }
+        .admin-modal .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        .admin-modal .modal-actions button { flex: 1; padding: 0.65rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; border: none; }
+        .admin-modal .modal-actions .btn-save { background: linear-gradient(135deg, var(--accent-violet), var(--accent-light)); color: #fff; }
+        .admin-modal .modal-actions .btn-cancel { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-glass); }
     </style>
 </head>
 <body class="page-jeux">
@@ -124,6 +162,12 @@
 
             <!-- Écran ajout de jeux (après connexion) -->
             <div class="admin-screen" id="addGameScreen">
+                <div class="admin-games-section">
+                    <h2>Jeux actuels</h2>
+                    <div id="adminGamesList" class="admin-games-list">
+                        <span class="admin-games-loading">Chargement…</span>
+                    </div>
+                </div>
                 <h1 class="admin-title">Ajouter un jeu</h1>
                 <form class="admin-form" id="adminForm">
                     <label>Titre du jeu *</label>
@@ -159,6 +203,42 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal modification -->
+    <div class="admin-modal-bg" id="editModal">
+        <div class="admin-modal">
+            <h3>Modifier le jeu</h3>
+            <form id="editForm">
+                <input type="hidden" name="index" id="editIndex">
+                <label>Titre du jeu *</label>
+                <input type="text" name="title" id="editTitle" required>
+                <label>URL de l'image *</label>
+                <input type="url" name="image" id="editImage" required>
+                <label>Lien de téléchargement *</label>
+                <input type="url" name="link" id="editLink" required>
+                <label>Mode *</label>
+                <select name="mode" id="editMode" required>
+                    <option value="solo">Solo</option>
+                    <option value="multiplayer">Multiplayer</option>
+                </select>
+                <div class="admin-toggle" style="margin-top: 1rem;">
+                    <label><input type="checkbox" name="hasModal" id="editHasModal"> Instructions (modal)</label>
+                </div>
+                <div class="admin-optional" id="editModalFields" style="display: none;">
+                    <label>ID modal</label>
+                    <input type="text" name="modalId" id="editModalId">
+                    <label>Titre modal</label>
+                    <input type="text" name="modalTitle" id="editModalTitle">
+                    <label>Contenu HTML modal</label>
+                    <textarea name="modalContent" id="editModalContent"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-save">Enregistrer</button>
+                    <button type="button" class="btn-cancel" id="editModalClose">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <script>
         const LOGIN_KEY = 'adminLoggedIn';
         const PASSWORD_KEY = 'adminPass';
@@ -175,6 +255,132 @@
         // Au chargement : si déjà connecté, afficher le formulaire d’ajout
         if (isLoggedIn()) {
             showScreen('addGameScreen');
+            loadGames();
+        }
+
+        function getAdminPassword() {
+            const p = sessionStorage.getItem(PASSWORD_KEY);
+            if (!p) { showScreen('loginScreen'); return null; }
+            return p;
+        }
+
+        async function loadGames() {
+            const el = document.getElementById('adminGamesList');
+            if (!el) return;
+            el.innerHTML = '<span class="admin-games-loading">Chargement…</span>';
+            try {
+                const res = await fetch('/api/games', { cache: 'no-store' });
+                const games = res.ok ? await res.json() : [];
+                if (!Array.isArray(games) || games.length === 0) {
+                    el.innerHTML = '<span class="admin-games-empty">Aucun jeu.</span>';
+                    return;
+                }
+                el.innerHTML = games.map((g, i) => `
+                    <div class="admin-game-row" data-index="${i}">
+                        <img src="${g.image}" alt="" onerror="this.style.display='none'">
+                        <div>
+                            <div class="title">${escapeHtml(g.title)}</div>
+                            <div class="mode">${g.mode || 'solo'}</div>
+                        </div>
+                        <div class="actions">
+                            <button type="button" class="btn-edit" data-index="${i}">Modifier</button>
+                            <button type="button" class="btn-delete" data-index="${i}">Supprimer</button>
+                        </div>
+                    </div>
+                `).join('');
+                el.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', function () {
+                    openEditModal(parseInt(this.getAttribute('data-index'), 10), games[parseInt(this.getAttribute('data-index'), 10)]);
+                }));
+                el.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', function () {
+                    const i = parseInt(this.getAttribute('data-index'), 10);
+                    deleteGame(i, games[i].title);
+                }));
+            } catch (e) {
+                el.innerHTML = '<span class="admin-games-empty">Erreur.</span>';
+            }
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function openEditModal(index, game) {
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editTitle').value = game.title || '';
+            document.getElementById('editImage').value = game.image || '';
+            document.getElementById('editLink').value = game.link || '';
+            document.getElementById('editMode').value = game.mode === 'multiplayer' ? 'multiplayer' : 'solo';
+            document.getElementById('editHasModal').checked = !!game.hasModal;
+            document.getElementById('editModalId').value = game.modalId || '';
+            document.getElementById('editModalTitle').value = game.modalTitle || '';
+            document.getElementById('editModalContent').value = game.modalContent || '';
+            document.getElementById('editModalFields').style.display = game.hasModal ? 'block' : 'none';
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        document.getElementById('editHasModal').addEventListener('change', function () {
+            document.getElementById('editModalFields').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('editModalClose').addEventListener('click', function () {
+            document.getElementById('editModal').classList.remove('active');
+        });
+        document.getElementById('editModal').addEventListener('click', function (e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+
+        document.getElementById('editForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const index = document.getElementById('editIndex').value;
+            const game = {
+                title: document.getElementById('editTitle').value.trim(),
+                image: document.getElementById('editImage').value.trim(),
+                link: document.getElementById('editLink').value.trim(),
+                mode: document.getElementById('editMode').value
+            };
+            if (document.getElementById('editHasModal').checked) {
+                game.hasModal = true;
+                game.modalId = document.getElementById('editModalId').value.trim().replace(/\s+/g, '-') || game.title.toLowerCase().replace(/\s+/g, '-');
+                game.modalTitle = document.getElementById('editModalTitle').value.trim() || 'Installation';
+                game.modalContent = document.getElementById('editModalContent').value.trim();
+            }
+            const adminPassword = getAdminPassword();
+            if (!adminPassword) return;
+            try {
+                const res = await fetch('/api/update-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword, index: parseInt(index, 10), game })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    document.getElementById('editModal').classList.remove('active');
+                    loadGames();
+                } else {
+                    alert(data.error || 'Erreur ' + res.status);
+                }
+            } catch (err) {
+                alert('Erreur réseau: ' + err.message);
+            }
+        });
+
+        async function deleteGame(index, title) {
+            if (!confirm('Supprimer le jeu « ' + title + ' » ?')) return;
+            const adminPassword = getAdminPassword();
+            if (!adminPassword) return;
+            try {
+                const res = await fetch('/api/delete-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword, index })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) loadGames();
+                else alert(data.error || 'Erreur ' + res.status);
+            } catch (err) {
+                alert('Erreur réseau: ' + err.message);
+            }
         }
 
         // Connexion
@@ -194,6 +400,7 @@
                     sessionStorage.setItem(LOGIN_KEY, '1');
                     sessionStorage.setItem(PASSWORD_KEY, password);
                     showScreen('addGameScreen');
+                    loadGames();
                 } else {
                     msg.className = 'admin-msg error';
                     msg.textContent = data.error || 'Mot de passe incorrect';
@@ -255,7 +462,7 @@
                 msg.className = 'admin-msg ' + (res.ok ? 'success' : 'error');
                 msg.textContent = data.error || data.message || (res.ok ? 'Jeu ajouté.' : 'Erreur ' + res.status);
                 msg.style.display = 'block';
-                if (res.ok) form.reset();
+                if (res.ok) { form.reset(); loadGames(); }
             } catch (err) {
                 msg.className = 'admin-msg error';
                 msg.textContent = 'Erreur réseau: ' + err.message;
