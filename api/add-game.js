@@ -55,8 +55,14 @@ export default async function handler(req, res) {
         if (getRes.ok) {
             const file = await getRes.json();
             sha = file.sha;
-            const decoded = Buffer.from(file.content, 'base64').toString('utf-8');
-            const parsed = JSON.parse(decoded.replace(/\r\n/g, '\n'));
+            let decoded = Buffer.from(file.content, 'base64').toString('utf-8');
+            decoded = decoded.replace(/\r\n/g, '\n').replace(/,(\s*[}\]])/g, '$1'); // enlève les virgules en trop (JSON invalide)
+            let parsed;
+            try {
+                parsed = JSON.parse(decoded);
+            } catch (parseErr) {
+                throw new Error('games.json sur GitHub contient du JSON invalide: ' + parseErr.message);
+            }
             current = Array.isArray(parsed) ? parsed : [];
         } else if (getRes.status !== 404) {
             const err = await getRes.text();
