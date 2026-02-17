@@ -102,8 +102,17 @@
 
         /* Liste des jeux */
         .admin-wrap { max-width: 640px; }
-        .admin-games-section { margin-bottom: 2rem; }
+        .admin-games-section { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass); }
         .admin-games-section h2 { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text-secondary); }
+        .admin-games-search {
+            width: 100%; padding: 0.6rem 0.85rem; margin-bottom: 0.75rem; border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-primary);
+            font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .admin-games-search:focus {
+            outline: none; border-color: var(--accent-violet); box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+        }
+        .admin-games-search::placeholder { color: var(--text-muted); }
         .admin-games-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .admin-game-row {
             display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem;
@@ -162,12 +171,6 @@
 
             <!-- Écran ajout de jeux (après connexion) -->
             <div class="admin-screen" id="addGameScreen">
-                <div class="admin-games-section">
-                    <h2>Jeux actuels</h2>
-                    <div id="adminGamesList" class="admin-games-list">
-                        <span class="admin-games-loading">Chargement…</span>
-                    </div>
-                </div>
                 <h1 class="admin-title">Ajouter un jeu</h1>
                 <form class="admin-form" id="adminForm">
                     <label>Titre du jeu *</label>
@@ -200,6 +203,14 @@
                 </form>
                 <button type="button" class="admin-logout" id="logoutBtn">Se déconnecter</button>
                 <div class="admin-msg" id="adminMsg"></div>
+
+                <div class="admin-games-section">
+                    <h2>Jeux actuels</h2>
+                    <input type="text" class="admin-games-search" id="adminGamesSearch" placeholder="Rechercher un jeu (titre ou mode)…">
+                    <div id="adminGamesList" class="admin-games-list">
+                        <span class="admin-games-loading">Chargement…</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -276,7 +287,7 @@
                     return;
                 }
                 el.innerHTML = games.map((g, i) => `
-                    <div class="admin-game-row" data-index="${i}">
+                    <div class="admin-game-row" data-index="${i}" data-search="${escapeAttr((g.title + ' ' + (g.mode || 'solo')).toLowerCase())}">
                         <img src="${g.image}" alt="" onerror="this.style.display='none'">
                         <div>
                             <div class="title">${escapeHtml(g.title)}</div>
@@ -295,15 +306,29 @@
                     const i = parseInt(this.getAttribute('data-index'), 10);
                     deleteGame(i, games[i].title);
                 }));
+                filterAdminGames();
             } catch (e) {
                 el.innerHTML = '<span class="admin-games-empty">Erreur.</span>';
             }
         }
 
+        function filterAdminGames() {
+            const q = (document.getElementById('adminGamesSearch').value || '').trim().toLowerCase();
+            const rows = document.querySelectorAll('#adminGamesList .admin-game-row');
+            rows.forEach(row => {
+                const search = (row.getAttribute('data-search') || '');
+                row.style.display = q === '' || search.indexOf(q) !== -1 ? '' : 'none';
+            });
+        }
+        document.getElementById('adminGamesSearch').addEventListener('input', filterAdminGames);
+
         function escapeHtml(s) {
             const d = document.createElement('div');
             d.textContent = s;
             return d.innerHTML;
+        }
+        function escapeAttr(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
         }
 
         function openEditModal(index, game) {
