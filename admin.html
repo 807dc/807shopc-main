@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin — Ajouter un jeu</title>
+    <title>Admin — NovaPlay</title>
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -30,51 +30,130 @@
         .admin-toggle { margin-top: 1rem; }
         .admin-toggle label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
         .admin-optional { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); }
+        .admin-screen { display: none; }
+        .admin-screen.active { display: block; }
+        .admin-login-card { background: var(--bg-card); border-radius: var(--radius-md); padding: 2rem; border: 1px solid var(--border-glass); }
+        .admin-login-card h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+        .admin-login-card input { max-width: 280px; }
+        .admin-logout { margin-top: 1rem; padding: 0.5rem 1rem; background: transparent; color: var(--text-muted); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem; }
+        .admin-logout:hover { color: var(--text-primary); border-color: var(--text-muted); }
     </style>
 </head>
 <body class="page-jeux">
     <div class="container-jeux">
         <a href="index.html" class="admin-back">← Retour au site</a>
         <div class="admin-wrap">
-            <h1 class="admin-title">Ajouter un jeu (admin)</h1>
-            <form class="admin-form" id="adminForm">
-                <label>Mot de passe admin *</label>
-                <input type="password" name="adminPassword" required placeholder="Ton mot de passe admin">
-                <label>Titre du jeu *</label>
-                <input type="text" name="title" required placeholder="Ex: Cyberpunk 2077">
-                <label>URL de l'image (616×353) *</label>
-                <input type="url" name="image" required placeholder="https://...">
-                <span class="hint">Ex: image Steam (capsule_616x353)</span>
-                <label>Lien de téléchargement *</label>
-                <input type="url" name="link" required placeholder="https://...">
-                <label>Mode *</label>
-                <select name="mode" required>
-                    <option value="solo">Solo</option>
-                    <option value="multiplayer">Multiplayer</option>
-                </select>
-                <div class="admin-toggle">
-                    <label>
-                        <input type="checkbox" name="hasModal" id="hasModal">
-                        Instructions d'installation (modal)
-                    </label>
+            <!-- Écran de connexion -->
+            <div class="admin-screen active" id="loginScreen">
+                <div class="admin-login-card">
+                    <h2 class="admin-title">Connexion admin</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Entre le mot de passe pour accéder à l’ajout de jeux.</p>
+                    <form id="loginForm">
+                        <label>Mot de passe</label>
+                        <input type="password" name="password" required placeholder="Mot de passe admin" autocomplete="current-password">
+                        <button type="submit" style="margin-top: 1rem;">Se connecter</button>
+                    </form>
+                    <div class="admin-msg" id="loginMsg"></div>
                 </div>
-                <div class="admin-optional" id="modalFields" style="display: none;">
-                    <label>ID du modal (sans espaces)</label>
-                    <input type="text" name="modalId" placeholder="mon-jeu">
-                    <label>Titre du modal</label>
-                    <input type="text" name="modalTitle" placeholder="Comment installer ?">
-                    <label>Contenu HTML du modal</label>
-                    <textarea name="modalContent" placeholder="<ul><li>Étape 1</li></ul>..."></textarea>
-                </div>
-                <button type="submit">Ajouter le jeu</button>
-            </form>
-            <div class="admin-msg" id="adminMsg"></div>
+            </div>
+
+            <!-- Écran ajout de jeux (après connexion) -->
+            <div class="admin-screen" id="addGameScreen">
+                <h1 class="admin-title">Ajouter un jeu</h1>
+                <form class="admin-form" id="adminForm">
+                    <label>Titre du jeu *</label>
+                    <input type="text" name="title" required placeholder="Ex: Cyberpunk 2077">
+                    <label>URL de l'image (616×353) *</label>
+                    <input type="url" name="image" required placeholder="https://...">
+                    <span class="hint">Ex: image Steam (capsule_616x353)</span>
+                    <label>Lien de téléchargement *</label>
+                    <input type="url" name="link" required placeholder="https://...">
+                    <label>Mode *</label>
+                    <select name="mode" required>
+                        <option value="solo">Solo</option>
+                        <option value="multiplayer">Multiplayer</option>
+                    </select>
+                    <div class="admin-toggle">
+                        <label>
+                            <input type="checkbox" name="hasModal" id="hasModal">
+                            Instructions d'installation (modal)
+                        </label>
+                    </div>
+                    <div class="admin-optional" id="modalFields" style="display: none;">
+                        <label>ID du modal (sans espaces)</label>
+                        <input type="text" name="modalId" placeholder="mon-jeu">
+                        <label>Titre du modal</label>
+                        <input type="text" name="modalTitle" placeholder="Comment installer ?">
+                        <label>Contenu HTML du modal</label>
+                        <textarea name="modalContent" placeholder="<ul><li>Étape 1</li></ul>..."></textarea>
+                    </div>
+                    <button type="submit">Ajouter le jeu</button>
+                </form>
+                <button type="button" class="admin-logout" id="logoutBtn">Se déconnecter</button>
+                <div class="admin-msg" id="adminMsg"></div>
+            </div>
         </div>
     </div>
     <script>
+        const LOGIN_KEY = 'adminLoggedIn';
+        const PASSWORD_KEY = 'adminPass';
+
+        function showScreen(id) {
+            document.querySelectorAll('.admin-screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function isLoggedIn() {
+            return sessionStorage.getItem(LOGIN_KEY) === '1';
+        }
+
+        // Au chargement : si déjà connecté, afficher le formulaire d’ajout
+        if (isLoggedIn()) {
+            showScreen('addGameScreen');
+        }
+
+        // Connexion
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const password = new FormData(this).get('password');
+            const msg = document.getElementById('loginMsg');
+            msg.style.display = 'none';
+            try {
+                const res = await fetch('/api/check-admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    sessionStorage.setItem(LOGIN_KEY, '1');
+                    sessionStorage.setItem(PASSWORD_KEY, password);
+                    showScreen('addGameScreen');
+                } else {
+                    msg.className = 'admin-msg error';
+                    msg.textContent = data.error || 'Mot de passe incorrect';
+                    msg.style.display = 'block';
+                }
+            } catch (err) {
+                msg.className = 'admin-msg error';
+                msg.textContent = 'Erreur réseau: ' + err.message;
+                msg.style.display = 'block';
+            }
+        });
+
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', function () {
+            sessionStorage.removeItem(LOGIN_KEY);
+            sessionStorage.removeItem(PASSWORD_KEY);
+            showScreen('loginScreen');
+        });
+
+        // Modal option
         document.getElementById('hasModal').addEventListener('change', function () {
             document.getElementById('modalFields').style.display = this.checked ? 'block' : 'none';
         });
+
+        // Ajout de jeu (utilise le mot de passe en session)
         document.getElementById('adminForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const form = e.target;
@@ -92,12 +171,20 @@
                 game.modalTitle = fd.get('modalTitle') || 'Installation';
                 game.modalContent = fd.get('modalContent') || '';
             }
+            const adminPassword = sessionStorage.getItem(PASSWORD_KEY);
+            if (!adminPassword) {
+                msg.className = 'admin-msg error';
+                msg.textContent = 'Session expirée. Reconnecte-toi.';
+                msg.style.display = 'block';
+                showScreen('loginScreen');
+                return;
+            }
             msg.style.display = 'none';
             try {
                 const res = await fetch('/api/add-game', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ adminPassword: fd.get('adminPassword'), game })
+                    body: JSON.stringify({ adminPassword, game })
                 });
                 const data = await res.json().catch(() => ({}));
                 msg.className = 'admin-msg ' + (res.ok ? 'success' : 'error');
