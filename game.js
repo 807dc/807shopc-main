@@ -166,15 +166,16 @@ function applyFilters() {
     });
 }
 
-async function initGamePage() {
+// Rafraîchit la liste des jeux (cache-busting pour éviter les données obsolètes)
+async function refreshGames(showLoading = true) {
     const gamesGrid = document.getElementById('gamesGrid');
     if (!gamesGrid) return;
 
-    gamesGrid.innerHTML = '<p class="games-loading">Chargement des jeux...</p>';
+    if (showLoading) gamesGrid.innerHTML = '<p class="games-loading">Chargement des jeux...</p>';
     let games = [];
 
     try {
-        const res = await fetch('/api/games', { cache: 'no-store' });
+        const res = await fetch('/api/games?t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
             const data = await res.json();
             games = Array.isArray(data) ? data : (data.games || data.items || []);
@@ -188,6 +189,13 @@ async function initGamePage() {
     gamesGrid.innerHTML = '';
     generateGameElements(games);
     generateModals(games);
+}
+
+async function initGamePage() {
+    const gamesGrid = document.getElementById('gamesGrid');
+    if (!gamesGrid) return;
+
+    await refreshGames(true);
 
     const gameSearch = document.getElementById('gameSearch');
     if (gameSearch) {
@@ -202,6 +210,11 @@ async function initGamePage() {
             currentFilter = this.getAttribute('data-filter');
             applyFilters();
         });
+    });
+
+    // Rafraîchit quand on revient sur l'onglet (après ajout/modif dans admin)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshGames(false);
     });
 }
 
