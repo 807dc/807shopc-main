@@ -8,34 +8,96 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         .admin-wrap { max-width: 560px; margin: 2rem auto; padding: 0 1rem; }
-        .admin-title { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); }
+        .admin-title { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 700; }
         .admin-form label { display: block; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
         .admin-form input, .admin-form select, .admin-form textarea {
             width: 100%; margin-top: 0.25rem; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm);
             border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-primary);
-            font-family: inherit; font-size: 1rem;
+            font-family: inherit; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus {
+            outline: none; border-color: var(--accent-violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
         }
         .admin-form textarea { min-height: 80px; resize: vertical; }
         .admin-form button[type="submit"] {
-            margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent-violet); color: #fff;
+            margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--accent-violet), var(--accent-light)); color: #fff;
             border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
         }
-        .admin-form button[type="submit"]:hover { background: var(--accent-light); }
+        .admin-form button[type="submit"]:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4); }
         .admin-form .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
         .admin-msg { margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius-sm); display: none; }
         .admin-msg.success { background: rgba(34, 197, 94, 0.2); color: #86efac; }
         .admin-msg.error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-        .admin-back { display: inline-block; margin-bottom: 1rem; color: var(--accent-light); text-decoration: none; }
-        .admin-back:hover { text-decoration: underline; }
+        .admin-back { display: inline-block; margin-bottom: 1rem; color: var(--accent-light); text-decoration: none; transition: color 0.2s; }
+        .admin-back:hover { color: #fff; text-decoration: underline; }
         .admin-toggle { margin-top: 1rem; }
         .admin-toggle label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
         .admin-optional { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); }
         .admin-screen { display: none; }
-        .admin-screen.active { display: block; }
-        .admin-login-card { background: var(--bg-card); border-radius: var(--radius-md); padding: 2rem; border: 1px solid var(--border-glass); }
-        .admin-login-card h2 { margin: 0 0 1rem; font-size: 1.25rem; }
-        .admin-login-card input { max-width: 280px; }
-        .admin-logout { margin-top: 1rem; padding: 0.5rem 1rem; background: transparent; color: var(--text-muted); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem; }
+        .admin-screen.active { display: block; animation: adminFadeIn 0.35s ease-out; }
+        @keyframes adminFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Login card stylé */
+        .admin-login-card {
+            background: linear-gradient(145deg, rgba(30, 25, 50, 0.6), rgba(15, 12, 25, 0.8));
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            border: 1px solid var(--border-accent);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(124, 58, 237, 0.1), 0 0 60px -12px rgba(124, 58, 237, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .admin-login-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-violet), var(--accent-light), transparent);
+            opacity: 0.8;
+        }
+        .admin-login-icon {
+            width: 56px; height: 56px; margin: 0 auto 1.25rem; display: flex; align-items: center; justify-content: center;
+            background: rgba(124, 58, 237, 0.2); border-radius: 50%; border: 1px solid rgba(124, 58, 237, 0.4);
+            font-size: 1.5rem;
+        }
+        .admin-login-card .admin-title {
+            text-align: center; font-family: 'Orbitron', sans-serif; font-size: 1.35rem; font-weight: 700;
+            background: linear-gradient(135deg, #fff, var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 0.5rem;
+        }
+        .admin-login-card .admin-subtitle {
+            text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;
+        }
+        .admin-login-card #loginForm label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
+        .admin-login-card #loginForm input {
+            width: 100%; max-width: 100%; padding: 0.85rem 1rem 0.85rem 2.75rem;
+            border-radius: var(--radius-sm); border: 1px solid var(--border-glass);
+            background: rgba(0, 0, 0, 0.25); font-size: 1rem; color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .admin-login-card #loginForm input:focus {
+            border-color: var(--accent-violet); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+        }
+        .admin-login-card #loginForm input::placeholder { color: var(--text-muted); }
+        .admin-password-wrap { position: relative; }
+        .admin-password-wrap::before {
+            content: '🔐'; position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
+            font-size: 1.1rem; opacity: 0.7; pointer-events: none;
+        }
+        .admin-password-wrap input { padding-left: 2.75rem; }
+        .admin-login-card #loginForm button[type="submit"] {
+            width: 100%; margin-top: 1.25rem; padding: 0.9rem;
+            background: linear-gradient(135deg, var(--accent-violet), var(--accent-light));
+            border: none; border-radius: var(--radius-sm); color: #fff; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .admin-login-card #loginForm button[type="submit"]:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 24px rgba(124, 58, 237, 0.45);
+        }
+        .admin-login-card #loginForm button[type="submit"]:active { transform: translateY(0); }
+        .admin-logout {
+            margin-top: 1rem; padding: 0.5rem 1rem; background: transparent; color: var(--text-muted);
+            border: 1px solid var(--border-glass); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem;
+            transition: color 0.2s, border-color 0.2s;
+        }
         .admin-logout:hover { color: var(--text-primary); border-color: var(--text-muted); }
     </style>
 </head>
@@ -46,12 +108,15 @@
             <!-- Écran de connexion -->
             <div class="admin-screen active" id="loginScreen">
                 <div class="admin-login-card">
-                    <h2 class="admin-title">Connexion admin</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Entre le mot de passe pour accéder à l’ajout de jeux.</p>
+                    <div class="admin-login-icon" aria-hidden="true">🔒</div>
+                    <h2 class="admin-title">Espace admin</h2>
+                    <p class="admin-subtitle">Entre ton mot de passe pour accéder à l’ajout de jeux</p>
                     <form id="loginForm">
-                        <label>Mot de passe</label>
-                        <input type="password" name="password" required placeholder="Mot de passe admin" autocomplete="current-password">
-                        <button type="submit" style="margin-top: 1rem;">Se connecter</button>
+                        <label for="adminPassword">Mot de passe</label>
+                        <div class="admin-password-wrap">
+                            <input type="password" id="adminPassword" name="password" required placeholder="••••••••" autocomplete="current-password">
+                        </div>
+                        <button type="submit">Se connecter</button>
                     </form>
                     <div class="admin-msg" id="loginMsg"></div>
                 </div>
