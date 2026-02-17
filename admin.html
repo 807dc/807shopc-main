@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Ajouter un jeu</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-wrap { max-width: 560px; margin: 2rem auto; padding: 0 1rem; }
+        .admin-title { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); }
+        .admin-form label { display: block; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+        .admin-form input, .admin-form select, .admin-form textarea {
+            width: 100%; margin-top: 0.25rem; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-primary);
+            font-family: inherit; font-size: 1rem;
+        }
+        .admin-form textarea { min-height: 80px; resize: vertical; }
+        .admin-form button[type="submit"] {
+            margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent-violet); color: #fff;
+            border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;
+        }
+        .admin-form button[type="submit"]:hover { background: var(--accent-light); }
+        .admin-form .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .admin-msg { margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius-sm); display: none; }
+        .admin-msg.success { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+        .admin-msg.error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .admin-back { display: inline-block; margin-bottom: 1rem; color: var(--accent-light); text-decoration: none; }
+        .admin-back:hover { text-decoration: underline; }
+        .admin-toggle { margin-top: 1rem; }
+        .admin-toggle label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+        .admin-optional { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); }
+    </style>
+</head>
+<body class="page-jeux">
+    <div class="container-jeux">
+        <a href="index.html" class="admin-back">← Retour au site</a>
+        <div class="admin-wrap">
+            <h1 class="admin-title">Ajouter un jeu (admin)</h1>
+            <form class="admin-form" id="adminForm">
+                <label>Mot de passe admin *</label>
+                <input type="password" name="adminPassword" required placeholder="Ton mot de passe admin">
+                <label>Titre du jeu *</label>
+                <input type="text" name="title" required placeholder="Ex: Cyberpunk 2077">
+                <label>URL de l'image (616×353) *</label>
+                <input type="url" name="image" required placeholder="https://...">
+                <span class="hint">Ex: image Steam (capsule_616x353)</span>
+                <label>Lien de téléchargement *</label>
+                <input type="url" name="link" required placeholder="https://...">
+                <label>Mode *</label>
+                <select name="mode" required>
+                    <option value="solo">Solo</option>
+                    <option value="multiplayer">Multiplayer</option>
+                </select>
+                <div class="admin-toggle">
+                    <label>
+                        <input type="checkbox" name="hasModal" id="hasModal">
+                        Instructions d'installation (modal)
+                    </label>
+                </div>
+                <div class="admin-optional" id="modalFields" style="display: none;">
+                    <label>ID du modal (sans espaces)</label>
+                    <input type="text" name="modalId" placeholder="mon-jeu">
+                    <label>Titre du modal</label>
+                    <input type="text" name="modalTitle" placeholder="Comment installer ?">
+                    <label>Contenu HTML du modal</label>
+                    <textarea name="modalContent" placeholder="<ul><li>Étape 1</li></ul>..."></textarea>
+                </div>
+                <button type="submit">Ajouter le jeu</button>
+            </form>
+            <div class="admin-msg" id="adminMsg"></div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('hasModal').addEventListener('change', function () {
+            document.getElementById('modalFields').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('adminForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const form = e.target;
+            const msg = document.getElementById('adminMsg');
+            const fd = new FormData(form);
+            const game = {
+                title: fd.get('title'),
+                image: fd.get('image'),
+                link: fd.get('link'),
+                mode: fd.get('mode')
+            };
+            if (fd.get('hasModal') === 'on') {
+                game.hasModal = true;
+                game.modalId = fd.get('modalId') || game.title.toLowerCase().replace(/\s+/g, '-');
+                game.modalTitle = fd.get('modalTitle') || 'Installation';
+                game.modalContent = fd.get('modalContent') || '';
+            }
+            msg.style.display = 'none';
+            try {
+                const res = await fetch('/api/add-game', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: fd.get('adminPassword'), game })
+                });
+                const data = await res.json().catch(() => ({}));
+                msg.className = 'admin-msg ' + (res.ok ? 'success' : 'error');
+                msg.textContent = data.error || data.message || (res.ok ? 'Jeu ajouté.' : 'Erreur ' + res.status);
+                msg.style.display = 'block';
+                if (res.ok) form.reset();
+            } catch (err) {
+                msg.className = 'admin-msg error';
+                msg.textContent = 'Erreur réseau: ' + err.message;
+                msg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
